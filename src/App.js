@@ -1,64 +1,71 @@
-import { useReducer } from 'react';
 import './App.css'
-import DigitButton from './DigitButton';
-import OperationButton from './OperationButton';
+import { useReducer } from 'react'
+import DigitButton from './DigitButton'
+import OperationButton from './OperationButton'
+
+
 export const ACTIONS = {
   ADD_DIGIT: 'add-digit',
   CHOOSE_OPERATION: 'choose-operation',
-  CLEAR: 'CLEAR',
-  DELETE_DIGIT: 'delete-digit',
+  CLEAR: 'clear',
+  DELETE_DIGIT: 'delete_digit',
   EVALUATE: 'evaluate'
 }
-function reducer(state, { type, payload }) {
+
+function reducer(state, {type, payload}){
   switch(type) {
     case ACTIONS.ADD_DIGIT:
-      if(state.overwrite){
+      if (state.overwrite){
         return {
           ...state,
           currentOperand: payload.digit,
           overwrite: false
         }
       }
-      if (payload.digit === "0" && state.currentOperand === "0") return state;
-      if (payload.digit === "." && state.currentOperand === ".") return state;
+      if (payload.digit === "0" && state.currentOperand === "0"){
+        return state
+      }
+      if (payload.digit && state.currentOperand === "0") {
+        return {
+          ...state,
+          currentOperand: payload.digit
+        }
+      }
+      if (payload.digit === "." && state.currentOperand?.includes(".")) return state
       return {
         ...state,
-        currentOperand: `${state.currentOperand || "" }${payload.digit}`
+        currentOperand: state.currentOperand ? state.currentOperand + payload.digit : payload.digit
       }
+
     case ACTIONS.CLEAR:
-      return {};
-    
+      return {}
+
     case ACTIONS.CHOOSE_OPERATION:
-      if (state.currentOperand == null && state.previousOperand == null) {
+      if (state.currentOperand == null && state.previousOperand == null){
         return state
       }
       if (state.currentOperand == null){
         return {
           ...state,
-          operation: payload.operation,
+          operation: payload.operation
         }
       }
-      if(state.previousOperand == null) {
+      if (state.previousOperand == null){
         return {
           ...state,
-          operation: payload.operation,
           previousOperand: state.currentOperand,
-          currentOperand: null,
+          operation: payload.operation,
+          currentOperand: null
         }
       }
-      return {
-        ...state,
-        previousOperand: evaluate(state),
-        operation: payload.operation,
-        currentOperand: null
-      }
+    break
     case ACTIONS.EVALUATE:
       if(state.operation == null || state.currentOperand == null || state.previousOperand == null){
         return state
       }
       return {
         ...state,
-        overwrite : true,
+        overwrite: true,
         previousOperand: null,
         operation: null,
         currentOperand: evaluate(state)
@@ -67,72 +74,79 @@ function reducer(state, { type, payload }) {
       if(state.overwrite){
         return {
           ...state,
-          overwrite: false,
+          overwrite:false,
           currentOperand: null
         }
       }
-      if (state.currentOperand == null ){
+      if (state.currentOperand == null){
         return state
       }
-      if (state.currentOperand === 1){
-        return {
+      if (state.currentOperand.length === 1){
+        return{
           ...state,
-          currentOperand: null,
+          currentOperand: null
         }
       }
       return {
         ...state,
         currentOperand: state.currentOperand.slice(0,-1)
-      }
+      }    
     default:
-      return state;
+      return state
   }
 }
-function evaluate({ currentOperand, previousOperand, operation }){
+
+function evaluate({currentOperand, previousOperand, operation}){
   const prev = parseFloat(previousOperand)
   const current = parseFloat(currentOperand)
   if (isNaN(prev) || isNaN(current)){
-    return  ""
+    return ""
   }
   let computation = ""
-  switch (operation){
+  switch(operation){
     case "+":
-      computation= prev + current;
-      break;
+      computation = prev + current
+    break
     case "-":
-      computation= prev - current;
-      break;
+      computation = prev - current
+    break
     case "x":
-      computation= prev * current;
-      break;
+      computation = prev * current
+    break
     case "÷":
-      computation = prev / current;
-      break;
+      computation = prev / current
+    break
     default:
-      computation= ""
+      computation = ""
   }
-  return computation.toString();
+  return computation.toString()
 }
+
 const INTEGER_FORMATTER = new Intl.NumberFormat("en-us", {
-  maximumFractionDigits:0,
-})  
-function formatOperand(operand) {
+  maximumFractionDigits:0
+})
+function formatOperand(operand){
   if (operand == null) return
-  const [interger, decimal] = operand.split('.')
+  const [integer,decimal] = operand.split('.')
   if (decimal == null){
-    return INTEGER_FORMATTER.format(interger)
+    return INTEGER_FORMATTER.format(integer)
   }
-  return `${INTEGER_FORMATTER.format(interger)}.${decimal}`
+  return `${INTEGER_FORMATTER.format(integer)}.${decimal}`
+
 }
 function App() {
-  const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(reducer, {});
-  return (
+  const [{currentOperand, previousOperand, operation}, dispatch] = useReducer(reducer, {})
+  return(
     <div className="calculator-grid">
       <div className="output">
-        <div className="previous-operand">{ formatOperand(previousOperand) } { operation }</div>
-        <div className="current-operand">{ formatOperand(currentOperand) }</div>
+        <div className="previous-operand">
+          {formatOperand(previousOperand)}{operation}
+        </div>
+        <div className="current-operand">
+          {formatOperand(currentOperand)}
+        </div>
       </div>
-      <button className="span-two" onClick={() => dispatch({ type: ACTIONS.CLEAR})}>AC</button>
+      <button className="span-two" onClick={ () => dispatch({type: ACTIONS.CLEAR})}>AC</button>
       <button onClick={() => dispatch({type: ACTIONS.DELETE_DIGIT})}>DEL</button>
       <OperationButton operation="÷" dispatch={dispatch} />
       <DigitButton digit="1" dispatch={dispatch}/>
@@ -149,9 +163,10 @@ function App() {
       <OperationButton operation="-" dispatch={dispatch} />
       <DigitButton digit="." dispatch={dispatch}/>
       <DigitButton digit="0" dispatch={dispatch}/>
-      <button className="span-two" onClick={() => dispatch({ type: ACTIONS.EVALUATE })}>=</button>
+      <button className="span-two" onClick={() => dispatch({type: ACTIONS.EVALUATE})}>=</button>
+
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
